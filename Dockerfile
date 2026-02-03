@@ -34,6 +34,9 @@ ENV NODE_ENV=production
 # Allow non-root user to write temp files during runtime/tests.
 RUN chown -R node:node /app
 
+# Make entrypoint script executable
+RUN chmod +x /app/scripts/docker/entrypoint.sh
+
 # Security hardening: Run as non-root user
 # The node:22-bookworm image includes a 'node' user (uid 1000)
 # This reduces the attack surface by preventing container escape via root privileges
@@ -42,7 +45,10 @@ USER node
 # Start gateway server with default config.
 # Binds to loopback (127.0.0.1) by default for security.
 #
-# For container platforms requiring external health checks:
-#   1. Set OPENCLAW_GATEWAY_TOKEN or OPENCLAW_GATEWAY_PASSWORD env var
-#   2. Override CMD: ["node","dist/index.js","gateway","--allow-unconfigured","--bind","lan"]
-CMD ["node", "dist/index.js", "gateway", "--allow-unconfigured"]
+# For container platforms requiring external health checks (Render, Railway, etc.):
+#   Set these environment variables:
+#   - OPENCLAW_GATEWAY_BIND=lan (binds to 0.0.0.0)
+#   - OPENCLAW_GATEWAY_PORT=10000 (or match your platform's expected port)
+#   - OPENCLAW_GATEWAY_TOKEN or OPENCLAW_GATEWAY_PASSWORD (required for non-loopback)
+ENTRYPOINT ["/app/scripts/docker/entrypoint.sh"]
+CMD []
