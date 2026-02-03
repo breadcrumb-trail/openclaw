@@ -174,14 +174,22 @@ async function runGatewayCommand(opts: GatewayRunOpts) {
     defaultRuntime.exit(1);
     return;
   }
-  const bindRaw = toOptionString(opts.bind) ?? cfg.gateway?.bind ?? "loopback";
+  const envBindRaw = process.env.OPENCLAW_GATEWAY_BIND ?? process.env.CLAWDBOT_GATEWAY_BIND;
+  const portHint = process.env.PORT?.trim();
+  const bindRaw =
+    toOptionString(opts.bind) ??
+    envBindRaw?.trim() ??
+    cfg.gateway?.bind ??
+    (portHint ? "lan" : "loopback");
+  const bindNormalized =
+    typeof bindRaw === "string" ? bindRaw.trim().toLowerCase() : bindRaw;
   const bind =
-    bindRaw === "loopback" ||
-    bindRaw === "lan" ||
-    bindRaw === "auto" ||
-    bindRaw === "custom" ||
-    bindRaw === "tailnet"
-      ? bindRaw
+    bindNormalized === "loopback" ||
+    bindNormalized === "lan" ||
+    bindNormalized === "auto" ||
+    bindNormalized === "custom" ||
+    bindNormalized === "tailnet"
+      ? bindNormalized
       : null;
   if (!bind) {
     defaultRuntime.error('Invalid --bind (use "loopback", "lan", "tailnet", "auto", or "custom")');
