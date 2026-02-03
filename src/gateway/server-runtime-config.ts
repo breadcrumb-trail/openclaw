@@ -39,7 +39,8 @@ export async function resolveGatewayRuntimeConfig(params: {
   auth?: GatewayAuthConfig;
   tailscale?: GatewayTailscaleConfig;
 }): Promise<GatewayRuntimeConfig> {
-  const bindMode = params.bind ?? params.cfg.gateway?.bind ?? "loopback";
+  const bindMode =
+    params.bind ?? resolveGatewayBindModeFromEnv(process.env) ?? params.cfg.gateway?.bind ?? "loopback";
   const customBindHost = params.cfg.gateway?.customBindHost;
   const bindHost = params.host ?? (await resolveGatewayBindHost(bindMode, customBindHost));
   const controlUiEnabled =
@@ -110,4 +111,23 @@ export async function resolveGatewayRuntimeConfig(params: {
     hooksConfig,
     canvasHostEnabled,
   };
+}
+
+function resolveGatewayBindModeFromEnv(env: NodeJS.ProcessEnv): GatewayBindMode | undefined {
+  const raw =
+    env.OPENCLAW_GATEWAY_BIND?.trim() || env.CLAWDBOT_GATEWAY_BIND?.trim();
+  if (!raw) {
+    return undefined;
+  }
+  const normalized = raw.toLowerCase();
+  if (
+    normalized === "auto" ||
+    normalized === "lan" ||
+    normalized === "loopback" ||
+    normalized === "custom" ||
+    normalized === "tailnet"
+  ) {
+    return normalized;
+  }
+  return undefined;
 }
